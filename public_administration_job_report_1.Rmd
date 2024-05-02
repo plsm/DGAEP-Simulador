@@ -1,0 +1,146 @@
+---
+title: "Relatório Emprego na Administração Pública"
+author: "Pedro Mariano"
+date: "2024-05-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introdução
+
+Este relatório contém uma análise do emprego público. Foram utilizados os dados disponíveis na página da internet da [DGAEP](https://www.dgaep.gov.pt/) relativos ao [boletim estatístico do emprego público](https://www.dgaep.gov.pt/index.cfm?OBJID=C0F56E62-5381-4271-B010-37ECE5B31017). Foram tratados os dados do [BOEP n.º 25 - Quadros Cap1 Administrações públicas](https://www.dgaep.gov.pt///upload/DIOEP/2023/BOEP25/DGAEP-DIOEP_Quadros_CAP1-Administracoes_Publicas_BOEP25-2023jun.xlsx). Este ficheiro Excel contém quatro conjuntos de folhas:
+
+1. Emprego no sector das administrações públicas por subsector e ministérios/secretarias regionais, segundo escalões etários e sexo;
+2. Emprego no sector das administrações públicas por subsector e ministérios/secretarias regionais, segundo nível de escolaridade e sexo;
+3. Emprego no sector das administrações públicas por subsector segundo o cargo / carreira / grupo, escalões etários e sexo;
+4. Emprego no sector das administrações públicas por subsector, segundo o cargo / carreira / grupo, nível de escolaridade e sexo.
+
+```{r echo=FALSE, cache=TRUE, results='hide'}
+library (package = "data.table")
+
+raw.data <- fread (
+  file = "posto-trabalho-por-admin-cargo-genero-data.csv"
+)
+delta.data <- fread (
+  file = "variações-posto-trabalho-por-admin-cargo-genero-idade.csv"
+)
+```
+
+## Análise
+
+Foram analisados os dados relativos ao emprego por subsector segundo o cargo / carreira / grupo, escalão etário e sexo. Foi construída uma tabela tal como a que se apresenta a seguir:
+
+```{r echo=FALSE, results='asis'}
+library (knitr)
+kable (raw.data [1:10, ])
+```
+
+Com esta tabela foi elaborado um conjunto de gráficos que ilustram o número de postos de trabalho ao longo dos vários semestres organizados por admnistração, escalão etário e sexo. Foi criado um gráfico para cada cargo. Um exemplo de um gráfico deste conjunto é:
+
+
+```{r echo=FALSE}
+library (package = "data.table")
+library (package = "ggplot2")
+
+el.cargo <- "Informático"
+
+dados.grafico <- raw.data [cargo == el.cargo]
+
+dados.grafico [
+  ,
+  `:=` (
+    time_label = sprintf ("%d/%02d/%0d", ano, `mês`, dia),
+    time_number = ano + (mês - 6) / 12.0
+  )
+]
+
+ggplot (
+    data = dados.grafico
+  ) + geom_point (
+    mapping = aes (
+      x = time_number,
+      y = `postos de trabalho`,
+      colour = factor (idade_num),
+      # size = 2,
+      shape = `género`
+    )
+  ) + geom_line (
+    data = dados.grafico [`género` == "m"],
+    mapping = aes (
+      x = time_number,
+      y = `postos de trabalho`,
+      colour = factor (idade_num),
+      group = idade_num
+    )
+  ) + geom_line (
+    data = dados.grafico [`género` == "f"],
+    mapping = aes (
+      x = time_number,
+      y = `postos de trabalho`,
+      colour = factor (idade_num),
+      group = idade_num
+    )
+  ) + facet_wrap (
+    facets = vars (`administração`)
+  ) + labs (
+    title = el.cargo
+  ) + scale_colour_discrete (
+    name = "idade",
+    labels = c (
+      "24 ou menos",
+      "25 a 34",
+      "35 a 44",
+      "45 a 54",
+      "55 a 65",
+      "65 ou mais"
+    )
+  ) + scale_x_continuous (
+    name = "tempo"
+  )
+```
+
+A partir dos valores apresentados nos gráficos anteriores, foi construída uma tabela que contém a diferença do número de postos de trabalho a 6 meses, 1, 2 e 5 anos. Este cálculo da diferença foi efectuado por administração, cargo, escalão etário e sexo. O valor calculado é dado por $p(t)-p(t-\Delta)$, em que $p(t)$ é o número de postos de trabalho à data $t$. Um valor positivo significa que o número de postos de trabalho em uma dada administração, em um cargo, numa determinada faixa etária e para um dado género aumentou. Estes valores permitem saber qual a tendência de evolução do número de postos de trabalho para os vários cargos. Um exemplo das diferenças obtidas para o cargo _Informático_ é:
+
+```{r echo=FALSE}
+library (package = "data.table")
+library (package = "ggplot2")
+
+el.cargo <- "Informático"
+
+dados.grafico <- delta.data [cargo == el.cargo]
+
+ggplot (
+  data = dados.grafico
+) + geom_boxplot (
+  mapping = aes (
+    x = factor (idade_idx),
+    y = delta.postos.trabalho.6.meses
+  )
+) + scale_x_discrete (
+  name = "idade",
+  labels = c (
+    "24 ou menos",
+    "25 a 34",
+    "35 a 44",
+    "45 a 54",
+    "55 a 65",
+    "65 ou mais"
+  ),
+) + scale_y_continuous (
+  name = "variação postos de trabalho"
+) + facet_grid (
+  rows = vars (`género`),
+  cols = vars (`administração`)
+) + labs (
+  title = "Variação do Número de Postos de Trabalho por Administração, Faixa Etária e Sexo",
+  subtitle = el.cargo
+) + theme (
+  axis.text.x = element_text (
+    angle = 30
+  )
+)
+```
+
