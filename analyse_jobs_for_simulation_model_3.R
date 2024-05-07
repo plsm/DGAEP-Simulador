@@ -72,14 +72,13 @@ calcula.parametros.modelo.simulação <- function (
     )
     # salvar gráfico ####
     num.administrações <- nrow (resultado [, administração, by = .(administração)])
-    print (num.administrações)
     ggsave (
       filename = sprintf ("modelo-3-simulação_delta-postos-trabalho_6-meses_%s.png", gsub ("/", "_", cargo)),
       plot = el.plot,
       device = "png",
       units = "px",
       width = 1800 * num.administrações / 5 + 50,
-      height = 950,
+      height = 800,
       dpi = 72
     )
     return (resultado)
