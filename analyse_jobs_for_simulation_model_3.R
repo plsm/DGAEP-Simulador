@@ -18,6 +18,12 @@ el.data  [
   )
 ]
 
+theme_set (
+  theme_bw (
+    base_size = 12
+  )
+)
+
 calcula.parametros.modelo.simulação <- function (
 ) {
   analisa.cargo <- function (
@@ -25,6 +31,7 @@ calcula.parametros.modelo.simulação <- function (
     subconjunto.dados
   ) {
     cat (sprintf ("%s\n", cargo))
+    # tabelar ####
     resultado <- subconjunto.dados [
       ,
       calculo.parametros (.SD),
@@ -34,6 +41,47 @@ calcula.parametros.modelo.simulação <- function (
         género
       )
     ]
+    # criar gráfico ####
+    el.plot <- ggplot (
+      data = resultado
+    ) + geom_pointrange (
+      mapping = aes (
+        x = as.factor (idade_idx),
+        y = media.delta.postos.trabalho.6.meses,
+        ymin = media.delta.postos.trabalho.6.meses - variacao.delta.postos.trabalho.6.meses,
+        ymax = media.delta.postos.trabalho.6.meses + variacao.delta.postos.trabalho.6.meses
+      )
+    ) + scale_x_discrete (
+      name = "idade",
+      labels = c (
+        "24 ou menos",
+        "25 a 34",
+        "35 a 44",
+        "45 a 54",
+        "55 a 65",
+        "65 ou mais"
+      )
+    ) + scale_y_continuous (
+      name = "postos de trabalho"
+    ) + facet_grid (
+      cols = vars (administração),
+      rows = vars (género)
+    # ) + theme_classic (
+    ) + labs (
+      title = cargo
+    )
+    # salvar gráfico ####
+    num.administrações <- nrow (resultado [, administração, by = .(administração)])
+    print (num.administrações)
+    ggsave (
+      filename = sprintf ("modelo-3-simulação_delta-postos-trabalho_6-meses_%s.png", gsub ("/", "_", cargo)),
+      plot = el.plot,
+      device = "png",
+      units = "px",
+      width = 1800 * num.administrações / 5 + 50,
+      height = 950,
+      dpi = 72
+    )
     return (resultado)
   }
   calculo.parametros <- function (
@@ -64,6 +112,8 @@ calcula.parametros.modelo.simulação <- function (
     ]
     return (resultado)
   }
+
+  # main ####
 
   min.time <- el.data [
     ,
