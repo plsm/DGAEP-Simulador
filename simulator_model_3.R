@@ -2,76 +2,106 @@
 library (package = "data.table")
 library (package = "ggplot2")
 
-corre.simulacoes <- function (
+simular <- function (
+    num.simulacoes = 30,
+    duracao.simulacao = 10
+) {
+  corre.simulacoes <- function (
     el.cargo,
     el.administracao,
     el.idade_idx,
     el.genero,
     parametros.cargo.admin.idad.gen
-) {
-  rec.simula.postos.trabalho <- function (
+  ) {
+    rec.simula.postos.trabalho <- function (
     x,
     n
-  ) {
-    if (n == 0) {
-      return (NULL)
+    ) {
+      if (n == 0) {
+        return (NULL)
+      }
+      else {
+        nx <- max (
+          0,
+          x + rnorm (
+            n = 1,
+            mean = media,
+            sd = variacao
+          )
+        )
+        return (c (nx, rec.simula.postos.trabalho (nx, n - 1)))
+      }
     }
-    else {
-      nx <- max (
-        0,
-        x + rnorm (
-          n = 1,
-          mean = media,
-          sd = variacao
+    corre.simulacao <- function (
+    ) {
+      result <- data.table (
+        `postos de trabalho` = rec.simula.postos.trabalho (
+          valor.ponto.partida,
+          duracao.simulacao
+        ),
+        time_number = seq (
+          from = tempo.ponto.partida + 0.5,
+          length.out = duracao.simulacao,
+          by = 0.5
         )
       )
-      return (c (nx, rec.simula.postos.trabalho (nx, n - 1)))
+      return (result)
     }
-  }
-  corre.simulacao <- function (
-  ) {
-    result <- data.table (
-      `postos de trabalho` = rec.simula.postos.trabalho (
-        valor.ponto.partida,
-        duracao.simulacao
-        ),
-      time_number = seq (
-        from = tempo.ponto.partida + 0.5,
-        length.out = duracao.simulacao,
-        by = 0.5
-        )
+    valor.ponto.partida <- dados.reais [
+      `administração` == el.administracao &
+        idade_idx == el.idade_idx &
+        `género` == el.genero &
+        cargo == el.cargo &
+        time_number == tempo.ponto.partida,
+      `postos de trabalho`
+    ]
+    runs <- data.table (
+      run = c (1:num.simulacoes)
     )
+    cat (sprintf ("%s @ %d\n", el.cargo, valor.ponto.partida))
+    media <- parametros.cargo.admin.idad.gen [, media.delta.postos.trabalho.6.meses]
+    variacao <- parametros.cargo.admin.idad.gen [, variacao.delta.postos.trabalho.6.meses]
+    # print (media)
+    # print (variacao)
+    # print (typeof (media))
+    # print (typeof (variacao))
+    # print (runs)
+    # print (parametros.cargo.admin.idad.gen)
+    # print (valor.ponto.partida)
+    result <- runs [
+      ,
+      corre.simulacao (),
+      by = .(run)
+    ]
+    # print (result)
     return (result)
   }
-  valor.ponto.partida <- dados.reais [
-    `administração` == el.administracao &
-      idade_idx == el.idade_idx &
-      `género` == el.genero &
-      cargo == el.cargo &
-      time_number == tempo.ponto.partida,
-    `postos de trabalho`
-  ]
-  runs <- data.table (
-    run = c (1:num.simulacoes)
-  )
-  cat (sprintf ("%s @ %d\n", el.cargo, valor.ponto.partida))
-  media <- parametros.cargo.admin.idad.gen [, media.delta.postos.trabalho.6.meses]
-  variacao <- parametros.cargo.admin.idad.gen [, variacao.delta.postos.trabalho.6.meses]
-  # print (media)
-  # print (variacao)
-  # print (typeof (media))
-  # print (typeof (variacao))
-  # print (runs)
-  # print (parametros.cargo.admin.idad.gen)
-  # print (valor.ponto.partida)
-  result <- runs [
+  
+  dados.simulados <- parametros.modelo [
     ,
-    corre.simulacao (),
-    by = .(run)
+    corre.simulacoes (
+      el.cargo = cargo,
+      el.administracao = administração,
+      el.idade_idx = idade_idx,
+      el.genero = género,
+      parametros.cargo.admin.idad.gen = .SD
+    )
+    ,
+    by = .(
+      cargo,
+      administração,
+      género,
+      idade_idx
+    )
   ]
-  # print (result)
-  return (result)
+  assign (
+    x = "dados.simulados",
+    value = dados.simulados,
+    envir = .GlobalEnv
+  )
+  return (dados.simulados)
 }
+
 
 cria.grafico <- function (
     cargo
@@ -80,9 +110,13 @@ cria.grafico <- function (
   el.cargo <- cargo
   subconjunto.dados.reais <- dados.reais [cargo == el.cargo]
   subconjunto.dados.simulados <- dados.simulados [cargo == el.cargo]
+  if (nrow (subconjunto.dados.simulados) == 0) {
+    cat ("Sem dados!\n")
+    return (FALSE)
+  }
   el.plot <- ggplot (
   ) + geom_vline (
-    xintercept = tempo.ponto.partida + 0.5,
+    xintercept = tempo.ponto.partida + 0.25,
     colour = "black"
   ) + geom_line (
     data = subconjunto.dados.reais,
@@ -98,14 +132,17 @@ cria.grafico <- function (
       y = `postos de trabalho`,
       colour = as.factor (idade_idx)
     )
-  # ) + geom_violin (
+  # ) + geom_line (
   #   data = subconjunto.dados.simulados,
   #   mapping = aes (
-  #     x = time_number,
-  #     y = `postos de trabalho`,
-  #     colour = as.factor (idade_idx)
+  #     x = as.factor (time_number),
+  #     y = `postos de trabalho`
+  #     # colour = as.factor (idade_idx),
+  #     
+  #     # group = as.factor (idade_idx)
   #   ),
-  #   orientation = "y"
+  #   # orientation = "y",
+  #   stat = "boxplot"
   ) + facet_grid (
     cols = vars (administração),
     rows = vars (género)
@@ -131,13 +168,14 @@ cria.grafico <- function (
   ) + scale_x_continuous (
     name = "tempo"
   )
+  num.administrações <- nrow (subconjunto.dados.reais [, administração, by = .(administração)])
   ggsave (
     filename = sprintf ("simulação-modelo-3_postos-de-trabalho_VS_tempo_%s.png", gsub ("/", "_", cargo)),
     plot = el.plot,
     device = "png",
     units = "px",
-    width = 1850,
-    height = 950,
+    width = 1800 * num.administrações / 5 + 150,
+    height = 800,
     dpi = 72
   )
   return (TRUE)
@@ -151,9 +189,6 @@ theme_set (
   )
 )
 
-num.simulacoes <- 30
-
-duracao.simulacao <- 10
 
 # ler dados ####
 
@@ -179,27 +214,10 @@ parametros.modelo <- fread (
 
 # simular ####
 
-simular <- function (
-) {
-  tempo.ponto.partida <- dados.reais [, max (time_number)]
-  
-  dados.simulados <- parametros.modelo [
-    ,
-    corre.simulacoes (
-      cargo,
-      administração,
-      género,
-      idade_idx,
-      .SD
-    )
-    ,
-    by = .(
-      cargo,
-      administração,
-      género,
-      idade_idx
-    )
-  ]
+tempo.ponto.partida <- dados.reais [, max (time_number)]
+
+if (!exists (x = "dados.simulados")) {
+  simular ()
 }
 
 # criar gráficos ####
