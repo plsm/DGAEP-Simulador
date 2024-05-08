@@ -47,6 +47,7 @@ simular <- function (
       )
       return (result)
     }
+    # main ####
     valor.ponto.partida <- dados.reais [
       `administração` == el.administracao &
         idade_idx == el.idade_idx &
@@ -61,22 +62,14 @@ simular <- function (
     cat (sprintf ("%s @ %d\n", el.cargo, valor.ponto.partida))
     media <- parametros.cargo.admin.idad.gen [, media.delta.postos.trabalho.6.meses]
     variacao <- parametros.cargo.admin.idad.gen [, variacao.delta.postos.trabalho.6.meses]
-    # print (media)
-    # print (variacao)
-    # print (typeof (media))
-    # print (typeof (variacao))
-    # print (runs)
-    # print (parametros.cargo.admin.idad.gen)
-    # print (valor.ponto.partida)
     result <- runs [
       ,
       corre.simulacao (),
       by = .(run)
     ]
-    # print (result)
     return (result)
   }
-  
+  # main ####
   dados.simulados <- parametros.modelo [
     ,
     corre.simulacoes (
@@ -132,17 +125,6 @@ cria.grafico <- function (
       y = `postos de trabalho`,
       colour = as.factor (idade_idx)
     )
-  # ) + geom_line (
-  #   data = subconjunto.dados.simulados,
-  #   mapping = aes (
-  #     x = as.factor (time_number),
-  #     y = `postos de trabalho`
-  #     # colour = as.factor (idade_idx),
-  #     
-  #     # group = as.factor (idade_idx)
-  #   ),
-  #   # orientation = "y",
-  #   stat = "boxplot"
   ) + facet_grid (
     cols = vars (administração),
     rows = vars (género)
