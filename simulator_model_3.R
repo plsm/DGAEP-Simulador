@@ -95,7 +95,6 @@ simular <- function (
   return (dados.simulados)
 }
 
-
 cria.grafico <- function (
     cargo
 ) {
