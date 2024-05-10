@@ -37,6 +37,8 @@ Para o modelo 1 foram calculadas uma série de conjuntos, $\mathcal{D}_{a,c,g,f,
 
 $\mathcal{D}_{a,c,g,f,T} = \{ x: \forall_t p_{a,c,g}(t+T,f) - p_{a,c,g}(t,f) \}$
 
+Se a diferença é positiva, isto representa as novas pessoas que são contratadas e/ou que transitam por envelhecimento da faixa etária anterior (caso $f>1$). Se a diferença é negativa, então pode representar despedimentos, reformas, ou pessoas que transitam para a faixa etária seguinte (caso $f<6$).
+
 Para obter uma simulação dos postos de trabalhos para uma dada administração, cargo, sexo, faixa etária e intervalo temporal $T$ foi calculado a seguinte sucessão:
 
 $p'_{a,c,g,f}(0) = p_{a,c,g}(t_0, f)$
@@ -45,11 +47,19 @@ $p'_{a,c,g,f}(n + 1) = p'_{a,c,g,f}(n) + \mathbf{sample} (\mathcal{D}_{a,c,g,f,T
 
 em que $\mathbf{sample}(\mathcal{C})$ devolve um elemento do conjunto $\mathcal{C}$.
 
+Neste modelo a evolução do número de postos de trabalho só depende da administração, do cargo, do sexo, e da faixa etária. Não há envelhecimentos das pessoas (passagem para a faixa etária seguinte).
 
 # Modelo 2
 
 No modelo 2 assume-se que há uma percentagem de pessoas que pertencem à faixa etária $f$ que envelhecem e passam à faixa etária seguinte, $f+1$. Esta percentagem depende do intervalo temporal $T$ utilizado numa simulação. Quanto maior $T$, maior o número de pessoas que transitam.
 
+Para se poder calcular novas contratações, despedimentos, ou reformas, é necessário ter em conta a transferência de postos de trabalho entre faixas etárias. Tomando como exemplo a primeira faixa etária, $f_1$, 
+
+$p'_{a,c,g}(0,f) = p_{a,c,g}(t_0, f)$
+
+$p'_{a,c,g}(n + 1,1) = (1 - \frac{T}{F_1}) p'_{a,c,g}(n,1) + \mathbf{sample} (\mathcal{D}_{a,c,g,1,T})$
+
+$p'_{a,c,g}(n + 1,f+1) = (1 - \frac{T}{F_{f+1}}) p'_{a,c,g}(n,f+1) + \frac{T}{F_f} p'_{a,c,g}(n,f) + \mathbf{sample} (\mathcal{D}_{a,c,g,f+1,T})$
 
 
 # Modelo 3

@@ -33,6 +33,16 @@ faixas.etarias <- fread (
   file = "faixas-etarias.csv"
 )
 
+FAIXA.ETARIA.MIN <- faixas.etarias [, min (FE.id)]
+FAIXA.ETARIA.MAX <- faixas.etarias [, max (FE.id)]
+
+duracao.faixa.etaria <- function (el.idade) {
+  return (faixas.etarias [
+    FE.id == el.idade,
+    FE.idade.max - FE.idade.min + 1
+  ])
+}
+
 theme_set (
   theme_bw (
     base_size = 12
@@ -98,6 +108,16 @@ calcula.parametros.modelo.simulação <- function (
     subconjunto.dados
   ) {
     # sub-funções ####
+    postos.trabalho <- function (
+      el.idade,
+      el.tempo
+    ) {
+      return (subconjunto.dados [
+        idade_idx == el.idade &
+          time_number == el.tempo,
+        `postos de trabalho`
+      ])
+    }
     valor <- function (
       el.idade,
       el.time
@@ -129,11 +149,34 @@ calcula.parametros.modelo.simulação <- function (
       }
       return (factor1 + factor2)
     }
+    calcula.delta <- function (
+      el.postos.trabalho,
+      el.idade,
+      el.time
+    ) {
+      resultado <-
+        el.postos.trabalho +
+        (ifelse (
+          el.idade == FAIXA.ETARIA.MAX,
+          0,
+          0.5 / duracao.faixa.etaria (el.idade)) - 1) *
+        postos.trabalho (el.idade = el.idade, el.tempo = el.time) -
+        ifelse (
+          el.idade == FAIXA.ETARIA.MIN,
+          0,
+          0.5 / duracao.faixa.etaria (el.idade - 1) *
+            postos.trabalho (el.idade = el.idade - 1, el.tempo = el.time))
+      return (resultado)
+    }
     # main ####
+    min.time <- el.data [
+      ,
+      min (time_number)
+    ]
     resultado <- subconjunto.dados [
       time_number >= min.time + 0.5,
       .(
-        delta.postos.trabalho.6.meses = `postos de trabalho` - valor (idade_idx, time_number)
+        delta.postos.trabalho.6.meses = calcula.delta (`postos de trabalho`, idade_idx, time_number - 0.5)
       ),
       by = .(
         idade_idx,
@@ -145,10 +188,6 @@ calcula.parametros.modelo.simulação <- function (
   
   # main ####
   
-  min.time <- el.data [
-    ,
-    min (time_number)
-  ]
   parametros.modelo.simulação <- el.data [
     ,
     analisa.cargo (

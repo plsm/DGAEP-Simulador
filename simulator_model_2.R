@@ -15,6 +15,17 @@ simular <- function (
     num.simulacoes = 30,
     duracao.simulacao = 10
 ) {
+#' Title
+#'
+#' @param el.cargo 
+#' @param el.administracao 
+#' @param el.genero 
+#' @param parametros.cargo.admin.gen 
+#'
+#' @return
+#' @export
+#'
+#' @examples
   corre.simulacoes <- function (
     el.cargo,
     el.administracao,
@@ -32,6 +43,17 @@ simular <- function (
         delta.postos.trabalho.6.meses
       ])
     }
+    
+#' Title
+#'
+#' @param matriz 
+#' @param n 
+#' @param t 
+#'
+#' @return
+#' @export
+#'
+#' @examples
     rec.simula.postos.trabalho <- function (
       matriz,
       n,
@@ -80,8 +102,34 @@ simular <- function (
         return (rec.simula.postos.trabalho (matriz, n - 1, t + 0.5))
       }
     }
-    simulador <- function () {
-      
+    simulador <- function (
+      acumulador,
+      vector,
+      n
+    ) {
+      if (n == 0) {
+        return (acumulador)
+      }
+      else {
+        pt <- function (idade) {
+          return (vector [idade_idx == idade, `postos de trabalho`])
+        }
+        prox.vector <- data.table (
+          idade_idx = faixas.etarias [FE.id]
+        )
+        prox.vector [
+          ,
+          `postos de trabalho` := max (
+            0,
+            (1 - 0.5 / delta.faixa.etaria (idade_idx)) * pt (idade_idx)
+            + ifelse (idade_idx > 0, 0.5 / delta.faixa.etaria (idade_idx - 1) * pt (idade_idx - 1))
+            + variacao (idade_idx)
+          ),
+          by = .(idade_idx)
+        ]
+        prox.acumulador <- rbind (acumulador, prox.vector)
+        return (simulador (prox.acumulador, prox.vector, n - 1))
+      }
     }
     cat (sprintf ("* ** %s ** *\n", el.cargo))
     # print (parametros.cargo.admin.gen)
