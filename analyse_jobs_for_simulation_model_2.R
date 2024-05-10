@@ -45,7 +45,7 @@ calcula.parametros.modelo.simulação <- function (
     cargo,
     subconjunto.dados
   ) {
-    cat (sprintf ("%s\n", cargo))
+    cat (sprintf ("* ** %s ** *\n", cargo))
     # tabelar ####
     resultado <- subconjunto.dados [
       ,
@@ -104,7 +104,7 @@ calcula.parametros.modelo.simulação <- function (
     ) {
       F.idade <- faixas.etarias [
         FE.id == el.idade,
-        FE.idade.max - FE.idade.min
+        FE.idade.max - FE.idade.min + 1
       ]
       ptfi <- subconjunto.dados [
         time_number == el.time - 0.5 &
@@ -115,14 +115,14 @@ calcula.parametros.modelo.simulação <- function (
       if (el.idade > 0) {
         F.idade.m1 <- faixas.etarias [
           FE.id == el.idade - 1,
-          FE.idade.max - FE.idade.min
+          FE.idade.max - FE.idade.min + 1
         ]
         ptfim1 <- subconjunto.dados [
           time_number == el.time - 0.5 &
             idade_idx == el.idade - 1,
           `postos de trabalho`
         ]
-        factor2 <- (1 - min (1, 0.5 / F.idade.m1)) * ptfim1
+        factor2 <- -(1 - min (1, 0.5 / F.idade.m1)) * ptfim1
       }
       else {
         factor2 <- 0
@@ -161,7 +161,8 @@ calcula.parametros.modelo.simulação <- function (
   ]
   fwrite (
     x = parametros.modelo.simulação,
-    file = "parametros-modelo-2-simulação-postos-trabalho.csv"
+    file = "parametros-modelo-2-simulação-postos-trabalho.csv",
+    quote = TRUE
   )
   return (parametros.modelo.simulação)
 }

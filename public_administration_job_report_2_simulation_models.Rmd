@@ -1,0 +1,65 @@
+---
+title: "Modelos Simulação"
+author: "Pedro Mariano"
+date: "2024-05-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introdução
+
+Os dados disponíveis no site da DGAEP foram pré-processados e guardados numa tabela com colunas para representar a administração, a faixa etária, o cargo, o sexo, a data e o número de postos de trabalho. O número de postos de trabalho é representado pela expressão:
+
+$p_{a,c,g}(t,f)$
+
+em que $a$ é a administração, $c$ o cargo, $g$ o sexo, $t$ a data, e $f$ a faixa etária. A unidade da data $t$ é anos. A faixa etária $f$ toma os valores 1 a 6 e a sua interpretação é dada pela tabela:
+
+<div>
+<style type="text/css">
+  .table {width: 25%;}
+</style>
+| $f$ | idade mínima | idade máxima |
+|:---:|-------------:|-------------:|
+| 1   |          18  |          24  |
+| 2   |          25  |          34  |
+| 3   |          35  |          44  |
+| 4   |          45  |          54  |
+| 5   |          55  |          64  |
+| 6   |          65  |          69  |
+</div>
+
+# Modelo 1
+
+Para o modelo 1 foram calculadas uma série de conjuntos, $\mathcal{D}_{a,c,g,f,T}$ contendo as diferenças do número de postos de trabalho que distam um determinado número de anos, $T$. Cada conjunto é representado por:
+
+$\mathcal{D}_{a,c,g,f,T} = \{ x: \forall_t p_{a,c,g}(t+T,f) - p_{a,c,g}(t,f) \}$
+
+Para obter uma simulação dos postos de trabalhos para uma dada administração, cargo, sexo, faixa etária e intervalo temporal $T$ foi calculado a seguinte sucessão:
+
+$p'_{a,c,g,f}(0) = p_{a,c,g}(t_0, f)$
+
+$p'_{a,c,g,f}(n + 1) = p'_{a,c,g,f}(n) + \mathbf{sample} (\mathcal{D}_{a,c,g,f,T})$
+
+em que $\mathbf{sample}(\mathcal{C})$ devolve um elemento do conjunto $\mathcal{C}$.
+
+
+# Modelo 2
+
+No modelo 2 assume-se que há uma percentagem de pessoas que pertencem à faixa etária $f$ que envelhecem e passam à faixa etária seguinte, $f+1$. Esta percentagem depende do intervalo temporal $T$ utilizado numa simulação. Quanto maior $T$, maior o número de pessoas que transitam.
+
+
+
+# Modelo 3
+
+O modelo 1 é baseado no modelo 1. Para cada conjunto $\mathcal{D}_{a,c,g,f,T}$ foram calculados a sua média, $M_{a,c,g,f,T}$, e desvio padrão, $S_{a,c,g,f,T}$. Estes dois valores foram usados obter uma distribuição normal que aproxima as diferenças do número de postos de trabalho. Um simulação dos postos de trabalhos é calculado segundo a sucessão:
+
+$p'_{a,c,g,f}(0) = p_{a,c,g}(t_0, f)$
+
+$p'_{a,c,g,f}(n + 1) = p'_{a,c,g,f}(n) + \mathbf{N} (M_{a,c,g,f,T}, S_{a,c,g,f,T})$
+
+em que $\mathbf{N}(m,s)$ representa a distribuição normal com média $m$ e desvio padrão $s$.
+
+

@@ -130,7 +130,8 @@ calcula.parametros.modelo.simulação <- function (
   ]
   fwrite (
     x = parametros.modelo.simulação,
-    file = "parametros-modelo-3-simulação-postos-trabalho.csv"
+    file = "parametros-modelo-3-simulação-postos-trabalho.csv",
+    quote = TRUE
   )
   return (parametros.modelo.simulação)
 }

@@ -2,6 +2,15 @@
 library (package = "data.table")
 library (package = "ggplot2")
 
+delta.faixa.etaria <- function (
+    idade_idx
+) {
+  return (faixas.etarias [
+    FE.id == idade_idx,
+    FE.idade.max - FE.idade.min + 1
+  ])
+}
+
 simular <- function (
     num.simulacoes = 30,
     duracao.simulacao = 10
@@ -47,16 +56,19 @@ simular <- function (
           return (ifelse (
             idade == 0,
             0,
-            min (1, 0.5 / 10) * cvector [id == idade - 1, pt]
+            min (
+              1,
+              0.5 / delta.faixa.etaria (idade_idx = idade)
+              ) * cvector [id == idade - 1, pt]
             ))
         }
-        cat ("cvector\n")
-        print (cvector)
+        # cat ("cvector\n")
+        # print (cvector)
         vector [
           ,
           `postos de trabalho` := max (
             0,
-            (1 - min (1, 0.5 / 10)) * `postos de trabalho` +
+            (1 - min (1, 0.5 / delta.faixa.etaria (idade_idx = idade_idx))) * `postos de trabalho` +
               anterior (idade_idx) +
               variacao (idade_idx)
           ),
@@ -80,18 +92,32 @@ simular <- function (
         time_number == tempo.ponto.partida,
       .(
         idade_idx,
-        `postos de trabalho`,
+        `postos de trabalho` = as.double (`postos de trabalho`),
         time_number
       )
     ]
+    # cat (sprintf ("Dados reais do cargo %s:\n", el.cargo))
+    # print (dados.reais [cargo == el.cargo])
+    # cat ("Dados reais\n")
+    # print (dados.reais [
+    #   `administração` == el.administracao &
+    #     `género` == el.genero &
+    #     cargo == el.cargo])
+    # cat ("vector partida\n")
     # print (vetor.partida)
-    resultado <- rec.simula.postos.trabalho (
-      vetor.partida,
-      duracao.simulacao,
-      tempo.ponto.partida
-    )
-    # print (resultado)
-    return (resultado)
+    if (nrow (vetor.partida) == 0) {
+      cat ("VAZIO!!\n")
+      return (data.table ())
+    }
+    else {
+      resultado <- rec.simula.postos.trabalho (
+        vetor.partida,
+        duracao.simulacao,
+        tempo.ponto.partida
+      )
+      # print (resultado)
+      return (resultado)
+    }
   }
   # main ####
   runs <- data.table (
@@ -228,7 +254,13 @@ parametros.modelo <- fread (
   file = "parametros-modelo-2-simulação-postos-trabalho.csv"
 )
 
+faixas.etarias <- fread (
+  file = "faixas-etarias.csv"
+)
+
 # main ####
+
+# parametros.modelo <- parametros.modelo [cargo == "Forças Armadas "]
 
 tempo.ponto.partida <- dados.reais [, max (time_number)]
 

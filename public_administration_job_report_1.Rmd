@@ -38,7 +38,7 @@ library (knitr)
 kable (raw.data [1:10, ])
 ```
 
-Com esta tabela foi elaborado um conjunto de gráficos que ilustram o número de postos de trabalho ao longo dos vários semestres organizados por admnistração, escalão etário e sexo. Foi criado um gráfico para cada cargo. Um exemplo de um gráfico deste conjunto é:
+Com esta tabela foi elaborado um conjunto de gráficos que ilustram o número de postos de trabalho ao longo dos vários semestres organizados por administração, escalão etário e sexo. Foi criado um gráfico para cada cargo. Um exemplo de um gráfico deste conjunto é:
 
 
 ```{r echo=FALSE}
