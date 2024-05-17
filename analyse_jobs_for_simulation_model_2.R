@@ -100,7 +100,7 @@ calcula.parametros.modelo.simulação <- function (
       units = "px",
       width = 1800 * num.administrações / 5 + 50,
       height = 800,
-      dpi = 72
+      dpi = 92
     )
     return (resultado)
   }
@@ -156,10 +156,9 @@ calcula.parametros.modelo.simulação <- function (
     ) {
       resultado <-
         el.postos.trabalho +
-        (ifelse (
-          el.idade == FAIXA.ETARIA.MAX,
-          0,
-          0.5 / duracao.faixa.etaria (el.idade)) - 1) *
+        (
+          0.5 / duracao.faixa.etaria (el.idade) - 1
+        ) *
         postos.trabalho (el.idade = el.idade, el.tempo = el.time) -
         ifelse (
           el.idade == FAIXA.ETARIA.MIN,
