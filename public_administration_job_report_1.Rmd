@@ -102,7 +102,7 @@ ggplot (
   )
 ```
 
-A partir dos valores apresentados nos gráficos anteriores, foi construída uma tabela que contém a diferença do número de postos de trabalho a 6 meses, 1, 2 e 5 anos. Este cálculo da diferença foi efectuado por administração, cargo, escalão etário e sexo. O valor calculado é dado por $p(t)-p(t-\Delta)$, em que $p(t)$ é o número de postos de trabalho à data $t$. Um valor positivo significa que o número de postos de trabalho em uma dada administração, em um cargo, numa determinada faixa etária e para um dado género aumentou. Estes valores permitem saber qual a tendência de evolução do número de postos de trabalho para os vários cargos. Um exemplo das diferenças obtidas para o cargo _Informático_ é:
+A partir dos valores apresentados nos gráficos anteriores, foi construída uma tabela que contém a diferença do número de postos de trabalho a 6 meses, 1, 2 e 5 anos. Este cálculo da diferença foi efectuado por administração, cargo, escalão etário e sexo. O valor calculado é dado por $p(t)-p(t-\Delta)$, em que $p(t)$ é o número de postos de trabalho à data $t$. Um valor positivo significa que o número de postos de trabalho em uma dada administração, em um cargo, numa determinada faixa etária e para um dado género aumentou. Estes valores podem ser usados para construir um modelo que represente a evolução do número de postos de trabalho para os vários cargos. Um exemplo das diferenças obtidas para o cargo _Informático_ é:
 
 ```{r echo=FALSE}
 library (package = "data.table")
@@ -143,4 +143,5 @@ ggplot (
   )
 )
 ```
+
 

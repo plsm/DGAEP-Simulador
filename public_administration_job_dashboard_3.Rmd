@@ -23,13 +23,14 @@ $p'_{a,c,g}(0,f) = p_{a,c,g}(T,f)$
 
 $p'_{a,c,g}(n+1,f) = p'_{a,c,f,g}(n) + N(m_{a,c,f,g}, d_{a,c,f,g})$
 
-em que $p_{a,c,g}(t,g)$ representa o número de postos de trabalho no período $t$, $T$ representa o ponto de partida da simulação, e $N(m,d)$ representa a distribuição normal com média $m$ e desvio padrão $d$. Uma simulação representa uma trajectório possível da evolução dos postos de trabalho. Ao serem feitas várias simulações, podemos ter uma ideia da tendência.
+em que $p_{a,c,g}(t,f)$ representa o número de postos de trabalho no período $t$ e na faixa etária $f$, $T$ representa o ponto de partida da simulação, e $N(m,d)$ representa a distribuição normal com média $m$ e desvio padrão $d$. Uma simulação representa uma trajectória possível da evolução dos postos de trabalho. Ao serem feitas várias simulações, podemos ter uma ideia da tendência.
 
 Este modelo não tem nenhuma correlação entre as faixas etárias. Comparativamente ao Modelo 1 de simulação, a diferença entre números da sequência é calculado a partir de uma distribuição normal ao invés de usar as variações observadas nos valores presentes na folha Excel.
 
 # Simulador
 
 ```{r echo=FALSE, cache=TRUE, results='hide'}
+library (package = "ggplot2")
 library (package = "data.table")
 
 dados.reais <- fread (
@@ -55,13 +56,26 @@ admins <- data.table (
 cargos <- data.table (
   cargo = unique (parametros.modelo [, cargo])
 )
+faixas.etarias <- fread (
+  file = "faixas-etarias.csv"
+)
+
+delta.faixa.etaria <- function (
+    idade_idx
+) {
+  return (faixas.etarias [
+    FE.id == idade_idx,
+    FE.idade.max - FE.idade.min + 1
+  ])
+}
 
 corre.simulador <- function (
     el.administracao,
     el.cargo,
     num.simulacoes,
     duracao.simulacao,
-    tempo.ponto.partida = dados.reais [, max (time_number)]
+    tempo.ponto.partida = dados.reais [, max (time_number)],
+    delta.tempo = 0.5
 ) {
   corre.simulacoes <- function (
     el.idade_idx,
@@ -69,8 +83,8 @@ corre.simulador <- function (
     parametros.cargo.admin.idad.gen
   ) {
     rec.simula.postos.trabalho <- function (
-      x,
-      n
+    x,
+    n
     ) {
       if (n == 0) {
         return (NULL)
@@ -84,7 +98,7 @@ corre.simulador <- function (
         return (c (
           nx,
           rec.simula.postos.trabalho (nx, n - 1)
-          ))
+        ))
       }
     }
     corre.simulacao <- function (
@@ -94,9 +108,9 @@ corre.simulador <- function (
           valor.ponto.partida,
           duracao.simulacao),
         time_number = seq (
-          from = tempo.ponto.partida + 0.5,
+          from = tempo.ponto.partida + delta.tempo,
           length.out = duracao.simulacao,
-          by = 0.5
+          by = delta.tempo
         )
       )
       return (result)
@@ -128,7 +142,56 @@ corre.simulador <- function (
     ]
     return (result)
   }
+  corre.simulacao.so.com.envelhecimento <- function () {
+    
+    rec.simula.postos.trabalho <- function (
+      acumulador,
+      vector,
+      n
+    ) {
+      if (n == 0) {
+        return (acumulador)
+      }
+      else {
+        pt <- function (idade, genero) {
+          return (vector [idade_idx == idade & género == genero, postos.trabalho])
+        }
+        prox.vector <- copy (vector)
+        prox.vector [
+          ,
+          `:=`(
+            time_number = time_number + delta.tempo,
+            postos.trabalho = max (
+              0,
+              (1 - delta.tempo / delta.faixa.etaria (idade_idx)) * pt (idade_idx, género)
+              + ifelse (
+                idade_idx > 0,
+                delta.tempo / delta.faixa.etaria (idade_idx - 1) * pt (idade_idx - 1, género),
+                0
+                )
+            )
+          ),
+          by = .(idade_idx, género)
+        ]
+        prox.acumulador <- rbind (acumulador, prox.vector)
+        return (rec.simula.postos.trabalho (prox.acumulador, prox.vector, n - 1))
+      }
+    }
+    vector.partida <- dados.reais [
+      `administração` == el.administracao &
+        cargo == el.cargo &
+        time_number == tempo.ponto.partida,
+      .(
+        idade_idx,
+        género,
+        postos.trabalho = as.double (`postos de trabalho`),
+        time_number
+      )
+    ]
+    return (rec.simula.postos.trabalho (vector.partida, vector.partida, duracao.simulacao))
+  }
   # main ####
+  dados.simulados.so.envelhecimento <- corre.simulacao.so.com.envelhecimento ()
   dados.simulados <- parametros.modelo [
     cargo == el.cargo &
       administração == el.administracao,
@@ -158,11 +221,21 @@ corre.simulador <- function (
       y = `postos de trabalho`,
       colour = as.factor (idade_idx)
     )
+  ) + geom_line (
+    data = dados.simulados.so.envelhecimento,
+    mapping = aes (
+      x = time_number,
+      y = postos.trabalho
+    ),
+    colour = "black",
+    alpha = 0.5,
+    size = 0.75
   ) + facet_grid (
     cols = vars (idade_idx),
     rows = vars (género)
   ) + scale_colour_discrete (
     name = "idade",
+    limits = factor (c (0, 1, 2, 3, 4, 5)),
     labels = c ("24 ou menos", "25 a 34", "35 a 44", "45 a 54", "55 a 65", "65 ou mais")
   ) + scale_x_continuous (
     name = "tempo"
