@@ -49,33 +49,54 @@ calcula.parametros.modelo.simulação <- function (
     sub.dados
   ) {
     cat (sprintf ("    %s\n", nome.sexo))
+    calcula.postos.trabalho <- function (
+      o.tempo,
+      a.faixa.etária
+    ) {
+      return (
+        sub.dados [
+          tempo == o.tempo &
+            faixa_etária == a.faixa.etária
+          ,
+          `postos de trabalho`
+        ]
+      )
+    }
     calcula.delta <- function (
       o.tempo,
       a.faixa.etária,
       o.postos.de.trabalho.atual.faixa.corrente
     ) {
-      o.postos.de.trabalho.anterior.faixa.corrent <- sub.dados [
-        tempo == o.tempo - delta &
-          faixa_etária == a.faixa.etária
-        ,
-        `postos de trabalho`
-      ]
-      valor <- o.postos.de.trabalho.atual.faixa.corrente - o.postos.de.trabalho.anterior.faixa.corrent * (1 - delta / duracao.faixa.etaria (a.faixa.etária))
+      valor <- (
+        o.postos.de.trabalho.atual.faixa.corrente
+        - calcula.postos.trabalho (
+            o.tempo = o.tempo - delta,
+            a.faixa.etária = a.faixa.etária
+        )
+        * (
+          1
+          - delta / duracao.faixa.etaria (
+            el.idade = a.faixa.etária))
+        )
       if (a.faixa.etária > FAIXA.ETARIA.MIN) {
-        o.postos.de.trabalho.anterior.faixa.anterior <- sub.dados [
-          tempo == o.tempo - delta &
-            faixa_etária == a.faixa.etária - 1
-          ,
-          `postos de trabalho`
-        ]
-        valor <- valor - o.postos.de.trabalho.anterior.faixa.anterior * delta / duracao.faixa.etaria (el.idade = a.faixa.etária - 1)
+        valor <- (
+          valor
+          - calcula.postos.trabalho (
+              o.tempo = o.tempo - delta,
+              a.faixa.etária = a.faixa.etária - 1
+          )
+          * delta
+          / duracao.faixa.etaria (
+            el.idade = a.faixa.etária - 1)
+        )
       }
       resultado <- data.table (
         delta = valor
       )
       return (resultado)
     }
-    return (sub.dados [
+    # main ####
+    tabela.deltas <- sub.dados [
       ,
       calcula.delta (
         o.tempo = tempo,
@@ -86,8 +107,20 @@ calcula.parametros.modelo.simulação <- function (
         tempo,
         faixa_etária
       )
-    ])
+    ]
+    resultado <- tabela.deltas [
+      ,
+      .(
+        media.delta = mean (delta),
+        desvio.padrão.delta = sd (delta)
+      ),
+      by = .(
+        faixa_etária
+      )
+    ]
+    return (resultado)
   }
+  # main ####
   tabela.parametros <- dados [
     ,
     ciclo.administração (administração, .SD),
@@ -96,7 +129,7 @@ calcula.parametros.modelo.simulação <- function (
   fwrite (
     x = tabela.parametros,
     file = sprintf (
-      "parametros-modelo-4-simulação-postos-trabalho_delta=%s.csv",
+      "parametros-modelo-5-simulação-postos-trabalho_delta=%s.csv",
       str_remove (
         sprintf ("%.1f", delta),
         "[.]?0+$"
