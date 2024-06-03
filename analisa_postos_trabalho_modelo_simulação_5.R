@@ -1,12 +1,12 @@
 library (package = "data.table")
-library (package = "tidyverse")
+library (package = "stringr")
 
 dados <- fread (
   file = "posto-trabalho-por-subsetor-ministerios-secretarias.csv"
 )
 
 faixas.etarias <- fread (
-  file = "faixas-etarias.csv"
+  file = "faixas-etarias2.csv"
 )
 
 FAIXA.ETARIA.MIN <- faixas.etarias [, min (FE.id)]
@@ -15,7 +15,7 @@ FAIXA.ETARIA.MAX <- faixas.etarias [, max (FE.id)]
 duracao.faixa.etaria <- function (el.idade) {
   return (faixas.etarias [
     FE.id == el.idade,
-    FE.idade.max - FE.idade.min + 1
+    FE.idade.max - FE.idade.min
   ])
 }
 

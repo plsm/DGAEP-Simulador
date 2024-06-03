@@ -9,8 +9,8 @@ faixas.etarias <- fread (
   file = "faixas-etarias2.csv"
 )
 
-FAIXA.ETARIA.MIN <- faixas.etarias [, min (FE.id)]
-FAIXA.ETARIA.MAX <- faixas.etarias [, max (FE.id)]
+FAIXA.ETARIA.MIN.ID <- faixas.etarias [, min (FE.id)]
+FAIXA.ETARIA.MIN.IDADE <- faixas.etarias [, min (FE.idade.min)]
 
 duracao.faixa.etaria <- function (el.idade) {
   return (faixas.etarias [
@@ -82,24 +82,6 @@ corre.simulação <- function (
             by = .(FE.id)
           ]
         )
-        variação.faixa.etária <- function (
-          faixa.etária.id,
-          média,
-          desvio
-        ) {
-          variação <- rnorm (n = 1, mean = média, sd = desvio)
-          idade.min <- faixas.etarias [FE.id == faixa.etária.id, FE.idade.min]
-          idade.max <- faixas.etarias [FE.id == faixa.etária.id, FE.idade.max]
-          intervalo <- idade.max - idade.min
-          return (vector.estado [
-            idade.min <= idade.minima & idade.max >= idade.minima + intervalo.idades,
-            .(
-              idade.minima,
-              intervalo.idades,
-              pt = max (0, pt + variação * intervalo.idades / intervalo)
-            )
-          ])
-        }
         # novas contratações, saídas, mortes, outras variações do número de postos de trabalho
         variações <- sub.parametros [
           ,
@@ -110,7 +92,7 @@ corre.simulação <- function (
           ),
           by = .(faixa_etária)
         ]
-        vector.estado.passo.1 <- (variações [
+        vector.estado.passo.1.1 <- variações [
           ,
           vector.estado [
             FE.idade.min <= idade.minima & idade.minima + intervalo.idades <= FE.idade.max,
@@ -121,20 +103,26 @@ corre.simulação <- function (
             )
           ],
           by = .(FE.idade.min, FE.idade.max)
-        ]) [, .(idade.minima, intervalo.idades, pt)]
+        ] [
+          ,
+          .(idade.minima, intervalo.idades, pt)
+        ]
         cat ("Varições\n")
         print (variações)
         cat ("Passo 1\n")
-        print (vector.estado.passo.1)
-        vector.estado.passo.1 <- sub.parametros [
-          ,
-          variação.faixa.etária (faixa_etária, media.delta, desvio.padrão.delta),
-          by = .(faixa_etária, media.delta, desvio.padrão.delta)
-        ]
-        cat ("Passo 1\n")
-        print (vector.estado.passo.1)
+        print (vector.estado.passo.1.1)
+        # novas contratações no intervalo de idades com a idade mais baixa
+        print ("novas contratações no intervalo de idades com a idade mais baixa")
+        print (faixas.etarias [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, FE.idade.max - FE.idade.min])
+        print (variações [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, variação / faixas.etarias [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, FE.idade.max - FE.idade.min]])
+        vector.estado.passo.1.2 <- data.table (
+          idade.minima = FAIXA.ETARIA.MIN.IDADE,
+          intervalo.idades = delta,
+          pt = max (0, variações [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, variação / faixas.etarias [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, FE.idade.max - FE.idade.min]])
+        )
+        print (vector.estado.passo.1.2)
         # envelhecimento
-        vector.estado.passo.2 <- vector.estado.passo.1 [
+        vector.estado.passo.2 <- vector.estado.passo.1.1 [
           ,
           .(
             idade.minima = idade.minima + delta,
@@ -144,22 +132,20 @@ corre.simulação <- function (
         ]
         cat ("Passo 2\n")
         print (vector.estado.passo.2)
-        # processar os triplos (idade minima, intervalo de idades, postos de trabalho) de modo a que as idades fiquem entre as faixas etárias existentes
+        # processar os triplos (idade mínima, intervalo de idades, postos de trabalho) de modo a que as idades fiquem entre as faixas etárias existentes
         cat (" ...3.1\n")
-        vector.estado.passo.3.1 <- (
-          faixas.etarias [
-            ,
-            vector.estado.passo.2 [
-              FE.idade.min <= idade.minima & idade.minima + intervalo.idades <= FE.idade.max
-            ],
-            by = .(FE.id, FE.idade.min, FE.idade.max)
-          ]
-        ) [, .(idade.minima, intervalo.idades, pt)]
-        # vector.estado.passo.3.1 <- vector.estado.passo.2 [
-        #   nrow (faixas.etarias [FE.idade.min <= idade.minima & idade.minima + intervalo.idades <= FE.idade.max]) > 0
-        # ]
+        vector.estado.passo.3.1 <- faixas.etarias [
+          ,
+          vector.estado.passo.2 [
+            FE.idade.min <= idade.minima & idade.minima + intervalo.idades <= FE.idade.max
+          ],
+          by = .(FE.id, FE.idade.min, FE.idade.max)
+        ] [
+          ,
+          .(idade.minima, intervalo.idades, pt)
+        ]
         cat (" ...3.2\n")
-        vector.estado.passo.3.2 <- (faixas.etarias [
+        vector.estado.passo.3.2 <- faixas.etarias [
           ,
           vector.estado.passo.2 [
             FE.idade.min <= idade.minima & idade.minima < FE.idade.max & FE.idade.max < idade.minima + intervalo.idades,
@@ -170,23 +156,32 @@ corre.simulação <- function (
             )
           ],
           by = .(FE.id, FE.idade.min, FE.idade.max)
-        ]) [, .(idade.minima, intervalo.idades, pt)]
+        ] [
+          ,
+          .(idade.minima, intervalo.idades, pt)
+        ]
         cat (" ...3.3\n")
-        vector.estado.passo.3.3 <- (
-          faixas.etarias [
-            ,
-            vector.estado.passo.2 [
-              idade.minima <= FE.idade.min & FE.idade.min < idade.minima + intervalo.idades & idade.minima + intervalo.idades <= FE.idade.max,
-              .(
-                idade.minima = FE.idade.min,
-                intervalo.idades = idade.minima + intervalo.idades - FE.idade.min,
-                pt = pt * (idade.minima + intervalo.idades - FE.idade.min) / intervalo.idades
-              )
-            ],
-            by = .(FE.id, FE.idade.min, FE.idade.max)
-          ]
-        ) [, .(idade.minima, intervalo.idades, pt)]
-        lpt <- list (vector.estado.passo.3.1, vector.estado.passo.3.2, vector.estado.passo.3.3)
+        vector.estado.passo.3.3 <- faixas.etarias [
+          ,
+          vector.estado.passo.2 [
+            idade.minima <= FE.idade.min & FE.idade.min < idade.minima + intervalo.idades & idade.minima + intervalo.idades <= FE.idade.max,
+            .(
+              idade.minima = FE.idade.min,
+              intervalo.idades = idade.minima + intervalo.idades - FE.idade.min,
+              pt = pt * (idade.minima + intervalo.idades - FE.idade.min) / intervalo.idades
+            )
+          ],
+          by = .(FE.id, FE.idade.min, FE.idade.max)
+        ] [
+          ,
+          .(idade.minima, intervalo.idades, pt)
+        ]
+        lpt <- list (
+          vector.estado.passo.1.2,
+          vector.estado.passo.3.1,
+          vector.estado.passo.3.2,
+          vector.estado.passo.3.3
+        )
         print (lpt)
         vector.estado.passo.3 <- rbindlist (lpt)
         cat ("Passo 3\n")
