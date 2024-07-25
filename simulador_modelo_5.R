@@ -63,8 +63,6 @@ corre.simulação <- function (
       if (n == 0)
         return (acumulador)
       else {
-        cat ("Recursivo\n")
-        print (vector.estado)
         novo.acumulador <- rbind (
           acumulador,
           faixas.etarias [
@@ -107,20 +105,12 @@ corre.simulação <- function (
           ,
           .(idade.minima, intervalo.idades, pt)
         ]
-        cat ("Varições\n")
-        print (variações)
-        cat ("Passo 1\n")
-        print (vector.estado.passo.1.1)
         # novas contratações no intervalo de idades com a idade mais baixa
-        print ("novas contratações no intervalo de idades com a idade mais baixa")
-        print (faixas.etarias [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, FE.idade.max - FE.idade.min])
-        print (variações [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, variação / faixas.etarias [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, FE.idade.max - FE.idade.min]])
         vector.estado.passo.1.2 <- data.table (
           idade.minima = FAIXA.ETARIA.MIN.IDADE,
           intervalo.idades = delta,
           pt = max (0, variações [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, variação / faixas.etarias [FE.idade.min == FAIXA.ETARIA.MIN.IDADE, FE.idade.max - FE.idade.min]])
         )
-        print (vector.estado.passo.1.2)
         # envelhecimento
         vector.estado.passo.2 <- vector.estado.passo.1.1 [
           ,
@@ -130,25 +120,24 @@ corre.simulação <- function (
             pt = pt
           )
         ]
-        cat ("Passo 2\n")
-        print (vector.estado.passo.2)
         # processar os triplos (idade mínima, intervalo de idades, postos de trabalho) de modo a que as idades fiquem entre as faixas etárias existentes
-        cat (" ...3.1\n")
         vector.estado.passo.3.1 <- faixas.etarias [
           ,
           vector.estado.passo.2 [
-            FE.idade.min <= idade.minima & idade.minima + intervalo.idades <= FE.idade.max
+            FE.idade.min <= idade.minima &
+              idade.minima + intervalo.idades <= FE.idade.max
           ],
           by = .(FE.id, FE.idade.min, FE.idade.max)
         ] [
           ,
           .(idade.minima, intervalo.idades, pt)
         ]
-        cat (" ...3.2\n")
         vector.estado.passo.3.2 <- faixas.etarias [
           ,
           vector.estado.passo.2 [
-            FE.idade.min <= idade.minima & idade.minima < FE.idade.max & FE.idade.max < idade.minima + intervalo.idades,
+            FE.idade.min <= idade.minima &
+              idade.minima < FE.idade.max &
+              FE.idade.max <= idade.minima + intervalo.idades,
             .(
               idade.minima,
               intervalo.idades = FE.idade.max - idade.minima,
@@ -160,11 +149,12 @@ corre.simulação <- function (
           ,
           .(idade.minima, intervalo.idades, pt)
         ]
-        cat (" ...3.3\n")
         vector.estado.passo.3.3 <- faixas.etarias [
           ,
           vector.estado.passo.2 [
-            idade.minima <= FE.idade.min & FE.idade.min < idade.minima + intervalo.idades & idade.minima + intervalo.idades <= FE.idade.max,
+            idade.minima <= FE.idade.min &
+              FE.idade.min < idade.minima + intervalo.idades &
+              idade.minima + intervalo.idades <= FE.idade.max,
             .(
               idade.minima = FE.idade.min,
               intervalo.idades = idade.minima + intervalo.idades - FE.idade.min,
@@ -182,13 +172,10 @@ corre.simulação <- function (
           vector.estado.passo.3.2,
           vector.estado.passo.3.3
         )
-        print (lpt)
-        vector.estado.passo.3 <- rbindlist (lpt)
-        cat ("Passo 3\n")
-        print (vector.estado.passo.3)
+        vector.estado.passo.4 <- rbindlist (lpt)
         return (iteração.simulação (
           acumulador = novo.acumulador,
-          vector.estado = vector.estado.passo.3,
+          vector.estado = vector.estado.passo.4,
           tempo = tempo + delta,
           n = n - 1
         ))
