@@ -1,0 +1,8 @@
+"FE.id","FE.idade.min","FE.idade.max","FE.etiqueta","FE.sexo"
+0,18,25,"24 anos ou menos",NA
+1,25,35,"25 a 34 anos",NA
+2,35,45,"35 a 44 anos",NA
+3,45,55,"45 a 54 anos",NA
+4,55,65,"55 a 64 anos",NA
+5,65,70,"65 anos ou mais","H"
+5,65,67,"65 anos ou mais","M"
