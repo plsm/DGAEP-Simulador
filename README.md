@@ -24,8 +24,12 @@ Os scripts neste repositório analisam o primeiro e o terceiro conjuntos de folh
 
    Deve aparecer os seguintes ficheiros
 
-       ls DGAEP-Simulador.git
-	   dados  DGAEP-Simulador.Rproj  doc  README.md  requirements.txt  src
+   - `dados`
+   - `DGAEP-Simulador.Rproj`
+   - `doc`
+   - `README.md`
+   - `requirements.txt`
+   - `src`
 
 2. Criar um ambiente virtual python
 
@@ -59,22 +63,33 @@ Para correr os scripts é necessário python3 e o R. Para ambos existem configur
 
 	   python3 ../src/constroi_tabela_postos_trabalho_ministerios_secretarias_regionais.py DGAEP-DIOEP_Quadros_CAP1-Admin_Publ_BOEP27-2024dez.xlsx
 
-   Após a criação dos ficheiros CSV devem constar os seguintes ficheiros:
+   Após a criação dos ficheiros CSV devem constar os seguintes ficheiros na pasta `~/work/DGAEP-Simulador.git/dados`:
 
-       DGAEP-DIOEP_Quadros_CAP1-Admin_Publ_BOEP27-2024dez.xlsx
-       faixas-etarias.csv
-       postos-trabalho-por-cargo-carreira-grupo.csv
-       postos-trabalho-por-ministerios-secretarias-regionais.csv
+   - `DGAEP-DIOEP_Quadros_CAP1-Admin_Publ_BOEP27-2024dez.xlsx`
+   - `faixas-etarias.csv`
+   - `postos-trabalho-por-cargo-carreira-grupo.csv`
+   - `postos-trabalho-por-ministerios-secretarias-regionais.csv`
 
 4. No *rstudio* abrir o projeto `~/work/DGAEP-Simulador.git/DGAEP-Simulador.Rproj`
 
 5. Criar os parâmetros do modelo de simulação nº 6. Na consola do *rstudio* executar os comandos:
 
        source("~/work/DGAEP-Simulador/src/calcula_parametros_modelo_simulação_6_ministerios_secretarias_regionais.R")
+       calcula.parametros.modelo.simulação(0.5)
        calcula.parametros.modelo.simulação(1)
 
-   Os parâmetros calculados assumem que se pretende obter a variação do número de postos de trabalho de um em um ano. Se se pretender a variação a cada 6 meses, deve-se passar o valor 0.5 à função `calcula.parametros.modelo.simulação`.
+   Os parâmetros calculados assumem que se pretende obter a variação do número de postos de trabalho de seis em seis meses e de um em um ano. Se se pretender a variação a cada dois anos, deve-se passar o valor 2 à função `calcula.parametros.modelo.simulação`.
 
-6. Executar o simulador do modelo nº 6. Abrir o ficheiro `dashboard_modelo_simulação_6_ministerios_secretarias_regionais.Rmd`. Abrir o menu *File* e escolher opção *Knit Document*, ou teclar *Ctrl+Shift+K*.
+   Após a execução devem constar os seguintes ficheiros na pasta `~/work/DGAEP-Simulador.git/dados`:
 
-   O dashboard utiliza o ficheiro `motor_dashboard_modelo_simulação_6.R` para calcular os gráficos que são apresentados. O motor assume que se vai utilizar os parâmetros baseados numa variação do número de postos de trabalho a cada 6 meses.
+   - `DGAEP-DIOEP_Quadros_CAP1-Admin_Publ_BOEP27-2024dez.xlsx`
+   - `faixas-etarias.csv`
+   - `'parametros-modelo-6_postos-trabalho-por-ministerios-secretarias-regionais_delta=0.5.csv'`
+   - `'parametros-modelo-6_postos-trabalho-por-ministerios-secretarias-regionais_delta=1.csv'`
+   - `postos-trabalho-por-cargo-carreira-grupo.csv`
+   - `postos-trabalho-por-ministerios-secretarias-regionais.csv`
+
+
+6. Executar o simulador do modelo nº 6. Abrir o ficheiro `dashboard_modelo_simulação_6_ministerios_secretarias_regionais.Rmd`. Ir ao menu *File* e escolher opção *Knit Document*, ou teclar *Ctrl+Shift+K*.
+
+   O dashboard utiliza o ficheiro `motor_dashboard_modelo_simulação_6.R` para calcular os gráficos que são apresentados. O motor assume que se vai utilizar os parâmetros baseados numa variação do número de postos de trabalho a cada 6 meses. Para utilizar outra variação, alterar o valor da variável `delta` na linha 44.
